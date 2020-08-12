@@ -96,6 +96,6 @@ public class AttributeUtil {
     }
 
     public static boolean hasGenericDataType(PropertyKey key) {
-        return key.dataType().equals(Object.class);
+        return key.dataType() != null && key.dataType().equals(Object.class);
     }
 }

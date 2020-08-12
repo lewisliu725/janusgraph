@@ -49,13 +49,19 @@ public class JanusGraphSchemaVertex extends CacheVertex implements SchemaSource 
             if (isLoaded()) {
                 StandardJanusGraphTx tx = tx();
                 p = (JanusGraphVertexProperty) Iterables.getOnlyElement(RelationConstructor.readRelation(this,
-                        tx.getGraph().getSchemaCache().getSchemaRelations(longId(), BaseKey.SchemaName, Direction.OUT),
-                        tx), null);
+                    tx.getGraph().getSchemaCache().getSchemaRelations(longId(), BaseKey.SchemaName, Direction.OUT),
+                    tx), null);
             } else {
                 p = Iterables.getOnlyElement(query().type(BaseKey.SchemaName).properties(), null);
             }
-            Preconditions.checkState(p!=null,"Could not find type for id: %s", longId());
-            name = p.value();
+
+//            Preconditions.checkState(p!=null,"Could not find type for id: %s", longId());
+//            name = p.value();
+            if (p == null) {
+                name = "missing";
+            } else {
+                name = p.value();
+            }
         }
         assert name != null;
         return JanusGraphSchemaCategory.getName(name);
@@ -76,59 +82,59 @@ public class JanusGraphSchemaVertex extends CacheVertex implements SchemaSource 
             Iterable<JanusGraphVertexProperty> ps;
             if (isLoaded()) {
                 StandardJanusGraphTx tx = tx();
-                ps = (Iterable)RelationConstructor.readRelation(this,
-                        tx.getGraph().getSchemaCache().getSchemaRelations(longId(), BaseKey.SchemaDefinitionProperty, Direction.OUT),
-                        tx);
+                ps = (Iterable) RelationConstructor.readRelation(this,
+                    tx.getGraph().getSchemaCache().getSchemaRelations(longId(), BaseKey.SchemaDefinitionProperty, Direction.OUT),
+                    tx);
             } else {
                 ps = query().type(BaseKey.SchemaDefinitionProperty).properties();
             }
             for (JanusGraphVertexProperty property : ps) {
                 TypeDefinitionDescription desc = property.valueOrNull(BaseKey.SchemaDefinitionDesc);
-                Preconditions.checkArgument(desc!=null && desc.getCategory().isProperty());
+                Preconditions.checkArgument(desc != null && desc.getCategory().isProperty());
                 def.setValue(desc.getCategory(), property.value());
             }
-            assert def.size()>0;
+            assert def.size() > 0;
             definition = def;
         }
-        assert def!=null;
+        assert def != null;
         return def;
     }
 
-    private ListMultimap<TypeDefinitionCategory,Entry> outRelations = null;
-    private ListMultimap<TypeDefinitionCategory,Entry> inRelations = null;
+    private ListMultimap<TypeDefinitionCategory, Entry> outRelations = null;
+    private ListMultimap<TypeDefinitionCategory, Entry> inRelations = null;
 
 
     @Override
     public Iterable<Entry> getRelated(TypeDefinitionCategory def, Direction dir) {
-        assert dir==Direction.OUT || dir==Direction.IN;
-        ListMultimap<TypeDefinitionCategory,Entry> relations = dir==Direction.OUT?outRelations:inRelations;
-        if (relations==null) {
-            ImmutableListMultimap.Builder<TypeDefinitionCategory,Entry> b = ImmutableListMultimap.builder();
+        assert dir == Direction.OUT || dir == Direction.IN;
+        ListMultimap<TypeDefinitionCategory, Entry> relations = dir == Direction.OUT ? outRelations : inRelations;
+        if (relations == null) {
+            ImmutableListMultimap.Builder<TypeDefinitionCategory, Entry> b = ImmutableListMultimap.builder();
             Iterable<JanusGraphEdge> edges;
             if (isLoaded()) {
                 StandardJanusGraphTx tx = tx();
-                edges = (Iterable)RelationConstructor.readRelation(this,
-                        tx.getGraph().getSchemaCache().getSchemaRelations(longId(), BaseLabel.SchemaDefinitionEdge, dir),
-                        tx);
+                edges = (Iterable) RelationConstructor.readRelation(this,
+                    tx.getGraph().getSchemaCache().getSchemaRelations(longId(), BaseLabel.SchemaDefinitionEdge, dir),
+                    tx);
             } else {
                 edges = query().type(BaseLabel.SchemaDefinitionEdge).direction(dir).edges();
             }
-            for (JanusGraphEdge edge: edges) {
+            for (JanusGraphEdge edge : edges) {
                 JanusGraphVertex oth = edge.vertex(dir.opposite());
                 assert oth instanceof JanusGraphSchemaVertex;
                 TypeDefinitionDescription desc = edge.valueOrNull(BaseKey.SchemaDefinitionDesc);
                 Object modifier = null;
                 if (desc.getCategory().hasDataType()) {
-                    assert desc.getModifier()!=null && desc.getModifier().getClass().equals(desc.getCategory().getDataType());
+                    assert desc.getModifier() != null && desc.getModifier().getClass().equals(desc.getCategory().getDataType());
                     modifier = desc.getModifier();
                 }
                 b.put(desc.getCategory(), new Entry((JanusGraphSchemaVertex) oth, modifier));
             }
             relations = b.build();
-            if (dir==Direction.OUT) outRelations=relations;
-            else inRelations=relations;
+            if (dir == Direction.OUT) outRelations = relations;
+            else inRelations = relations;
         }
-        assert relations!=null;
+        assert relations != null;
         return relations.get(def);
     }
 
@@ -137,23 +143,23 @@ public class JanusGraphSchemaVertex extends CacheVertex implements SchemaSource 
      * This is needed when the type gets modified in the {@link org.janusgraph.graphdb.database.management.ManagementSystem}.
      */
     @Override
-  public void resetCache() {
+    public void resetCache() {
         name = null;
-        definition=null;
-        outRelations=null;
-        inRelations=null;
+        definition = null;
+        outRelations = null;
+        inRelations = null;
     }
 
     public Iterable<JanusGraphEdge> getEdges(final TypeDefinitionCategory def, final Direction dir) {
-        return getEdges(def,dir,null);
+        return getEdges(def, dir, null);
     }
 
     public Iterable<JanusGraphEdge> getEdges(final TypeDefinitionCategory def, final Direction dir, JanusGraphSchemaVertex other) {
         JanusGraphVertexQuery query = query().type(BaseLabel.SchemaDefinitionEdge).direction(dir);
-        if (other!=null) query.adjacent(other);
+        if (other != null) query.adjacent(other);
         return Iterables.filter(query.edges(), (Predicate<JanusGraphEdge>) edge -> {
             final TypeDefinitionDescription desc = edge.valueOrNull(BaseKey.SchemaDefinitionDesc);
-            return desc.getCategory()==def;
+            return desc.getCategory() == def;
         });
     }
 
@@ -164,12 +170,12 @@ public class JanusGraphSchemaVertex extends CacheVertex implements SchemaSource 
 
     @Override
     public SchemaStatus getStatus() {
-        return getDefinition().getValue(TypeDefinitionCategory.STATUS,SchemaStatus.class);
+        return getDefinition().getValue(TypeDefinitionCategory.STATUS, SchemaStatus.class);
     }
 
     @Override
     public IndexType asIndexType() {
-        Preconditions.checkArgument(getDefinition().containsKey(TypeDefinitionCategory.INTERNAL_INDEX),"Schema vertex is not a type vertex: [%s,%s]", longId(), name());
+        Preconditions.checkArgument(getDefinition().containsKey(TypeDefinitionCategory.INTERNAL_INDEX), "Schema vertex is not a type vertex: [%s,%s]", longId(), name());
         if (getDefinition().<Boolean>getValue(TypeDefinitionCategory.INTERNAL_INDEX)) {
             return new CompositeIndexTypeWrapper(this);
         } else {

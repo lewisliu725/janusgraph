@@ -23,6 +23,7 @@ import org.janusgraph.graphdb.configuration.PreInitializeConfigOptions;
 import org.janusgraph.graphdb.internal.InternalRelationType;
 import org.janusgraph.graphdb.relations.EdgeDirection;
 import org.janusgraph.graphdb.relations.ReassignableRelation;
+import org.janusgraph.graphdb.types.StandardPropertyKeyMaker;
 import org.janusgraph.util.stats.NumberUtil;
 
 import org.janusgraph.diskstorage.Backend;
@@ -345,18 +346,33 @@ public class VertexIDAssigner implements AutoCloseable {
             elementId = idManager.getRelationID(count, partitionID);
         } else if (element instanceof PropertyKey) {
             elementId = IDManager.getSchemaId(IDManager.VertexIDType.UserPropertyKey,count);
+            elementId = getEhmId(element, elementId);
         } else if (element instanceof EdgeLabel) {
             elementId = IDManager.getSchemaId(IDManager.VertexIDType.UserEdgeLabel, count);
         } else if (element instanceof VertexLabel) {
             elementId = IDManager.getSchemaId(IDManager.VertexIDType.VertexLabel, count);
         } else if (element instanceof JanusGraphSchemaVertex) {
             elementId = IDManager.getSchemaId(IDManager.VertexIDType.GenericSchemaType,count);
+            elementId = getEhmId(element, elementId);
         } else {
             elementId = idManager.getVertexID(count, partitionID, userVertexIDType);
         }
 
         Preconditions.checkArgument(elementId >= 0);
         element.setId(elementId);
+    }
+
+    private static long getEhmId(InternalElement element, long regularId) {
+        String name = null;
+        if (StandardPropertyKeyMaker.propertyName != null) {
+            name = StandardPropertyKeyMaker.propertyName.get();
+            StandardPropertyKeyMaker.propertyName.remove();
+        }
+        if (name != null && name.startsWith("EHM_")) {
+            return Long.valueOf(name.split("_")[1]);
+        } else {
+            return regularId;
+        }
     }
 
     private static IDManager.VertexIDType getVertexIDType(VertexLabel vertexLabel) {

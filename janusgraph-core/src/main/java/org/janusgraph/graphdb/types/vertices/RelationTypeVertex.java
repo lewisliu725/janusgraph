@@ -22,10 +22,7 @@ import org.janusgraph.core.Multiplicity;
 import org.janusgraph.graphdb.internal.Order;
 import org.janusgraph.graphdb.internal.InternalRelationType;
 import org.janusgraph.graphdb.transaction.StandardJanusGraphTx;
-import org.janusgraph.graphdb.types.IndexType;
-import org.janusgraph.graphdb.types.SchemaSource;
-import org.janusgraph.graphdb.types.TypeDefinitionCategory;
-import org.janusgraph.graphdb.types.TypeUtil;
+import org.janusgraph.graphdb.types.*;
 import org.apache.tinkerpop.gremlin.structure.Direction;
 
 import javax.annotation.Nullable;
@@ -42,27 +39,52 @@ public abstract class RelationTypeVertex extends JanusGraphSchemaVertex implemen
 
     @Override
     public long[] getSortKey() {
-        return getDefinition().getValue(TypeDefinitionCategory.SORT_KEY, long[].class);
+        TypeDefinitionMap def = getDefinition();
+        if (def == null) {
+            return new long[0];
+        } else {
+            return def.getValue(TypeDefinitionCategory.SORT_KEY, long[].class);
+        }
     }
 
     @Override
     public Order getSortOrder() {
-        return getDefinition().getValue(TypeDefinitionCategory.SORT_ORDER, Order.class);
+        TypeDefinitionMap def = getDefinition();
+        if (def == null) {
+            return Order.ASC;
+        } else {
+            return def.getValue(TypeDefinitionCategory.SORT_ORDER, Order.class);
+        }
     }
 
     @Override
     public long[] getSignature() {
-        return getDefinition().getValue(TypeDefinitionCategory.SIGNATURE, long[].class);
+        TypeDefinitionMap def = getDefinition();
+        if (def == null) {
+            return new long[0];
+        } else {
+            return def.getValue(TypeDefinitionCategory.SIGNATURE, long[].class);
+        }
     }
 
     @Override
     public boolean isInvisibleType() {
-        return getDefinition().getValue(TypeDefinitionCategory.INVISIBLE, Boolean.class);
+        TypeDefinitionMap def = getDefinition();
+        if (def == null) {
+            return false;
+        } else {
+            return def.getValue(TypeDefinitionCategory.INVISIBLE, Boolean.class);
+        }
     }
 
     @Override
     public Multiplicity multiplicity() {
-        return getDefinition().getValue(TypeDefinitionCategory.MULTIPLICITY, Multiplicity.class);
+        TypeDefinitionMap def = getDefinition();
+        if (def == null) {
+            return Multiplicity.MANY2ONE;
+        } else {
+            return def.getValue(TypeDefinitionCategory.MULTIPLICITY, Multiplicity.class);
+        }
     }
 
     private ConsistencyModifier consistency = null;

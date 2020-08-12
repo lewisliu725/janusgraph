@@ -33,6 +33,8 @@ import static org.janusgraph.graphdb.types.TypeDefinitionCategory.DATATYPE;
 
 public class StandardPropertyKeyMaker extends StandardRelationTypeMaker implements PropertyKeyMaker {
 
+    public static ThreadLocal<String> propertyName = new ThreadLocal<>();
+
     private Class<?> dataType;
 
     public StandardPropertyKeyMaker(StandardJanusGraphTx tx, String name, IndexSerializer indexSerializer,
@@ -95,6 +97,11 @@ public class StandardPropertyKeyMaker extends StandardRelationTypeMaker implemen
 
         TypeDefinitionMap definition = makeDefinition();
         definition.setValue(DATATYPE, dataType);
-        return tx.makePropertyKey(getName(), definition);
+        try {
+            propertyName.set(getName());
+            return tx.makePropertyKey(getName(), definition);
+        } finally {
+            propertyName.remove();
+        }
     }
 }

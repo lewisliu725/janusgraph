@@ -594,8 +594,8 @@ public class StandardJanusGraph extends JanusGraphBlueprintsGraph {
             for (final InternalRelation edge : edges) {
                 final InternalRelationType baseType = (InternalRelationType) edge.getType();
                 assert baseType.getBaseType()==null;
-
                 for (InternalRelationType type : baseType.getRelationIndexes()) {
+                    log.warn("Base type: {}, relation type: {}", getRelationTypeName(baseType), getRelationTypeName(type));
                     if (type.getStatus()== SchemaStatus.DISABLED) continue;
                     for (int pos = 0; pos < edge.getArity(); pos++) {
                         if (!type.isUnidirected(Direction.BOTH) && !type.isUnidirected(EdgeDirection.fromPosition(pos)))
@@ -643,6 +643,14 @@ public class StandardJanusGraph extends JanusGraphBlueprintsGraph {
             }
         }
         return new ModificationSummary(!mutations.isEmpty(),has2iMods);
+    }
+
+    private String getRelationTypeName(InternalRelationType type) {
+        try {
+            return type.name();
+        } catch (Exception ex) {
+            return "error";
+        }
     }
 
     private static final Predicate<InternalRelation> SCHEMA_FILTER =

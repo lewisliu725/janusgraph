@@ -71,8 +71,13 @@ public enum JanusGraphSchemaCategory {
 
     public static String getName(String schemaName) {
         String[] comps = Token.splitSeparatedName(schemaName);
-        Preconditions.checkArgument(comps.length==2);
-        return comps[1];
+//        Preconditions.checkArgument(comps.length==2);
+//        return comps[1];
+        if (comps.length == 2) {
+            return comps[1];
+        }else {
+            return "SchemaCategoryMissing";
+        }
     }
 
     public void verifyValidDefinition(TypeDefinitionMap definition) {
